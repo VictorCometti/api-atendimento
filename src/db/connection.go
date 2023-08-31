@@ -9,17 +9,21 @@ import (
 )
 
 func getStringConnection() (connectionString string, erro error) {
-	viper.SetConfigFile("config")
+	viper.SetConfigName("config")
+	viper.SetConfigType("json")
 	viper.AddConfigPath("src/config")
-	viper.ReadInConfig()
 
-	host := viper.GetString("database.host")
-	port := viper.GetString("database.port")
+	if erro = viper.ReadInConfig(); erro != nil {
+		log.Fatalf("Erro ao tentar ler o árquivo de conexão: Erro: %v", erro)
+	}
+
 	username := viper.GetString("database.username")
 	password := viper.GetString("database.password")
-	databaseName := viper.GetString("database.databaseName")
+	hostname := viper.GetString("database.hostname")
+	port := viper.GetString("database.port")
+	database := viper.GetString("database.database_name")
 
-	connectionString = "postgres://" + username + ":" + password + "@" + host + ":" + port + "/" + databaseName + "sslmode=false"
+	connectionString = "host=" + hostname + " port=" + port + " user=" + username + " password=" + password + " dbname=" + database + " sslmode=disable"
 	return
 
 }

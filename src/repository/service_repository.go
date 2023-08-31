@@ -7,34 +7,39 @@ import (
 	"github.com/VictorCometti/api-atendimento/src/models"
 )
 
-type Repository struct {
+type repository struct {
 	DB *sql.DB
 }
 
-func (repository *Repository) FindServiceByIdentifier(serviceIdentifier int) (services []models.Service, erro error) {
-	query := ("SELECT * FROM api_schema.services WHERE service_identifier = ?")
+func NewServiceRepository(db *sql.DB) *repository {
+	return &repository{db}
+}
 
-	rows, err := repository.DB.Query(query, serviceIdentifier)
-	if err != nil {
-		return nil, err
+func (repository *repository) FindServiceByIdentifier(serviceIdentifier int) (exams []models.ExamDTO, erro error) {
+	query := "SELECT service.service_date, service.service_identifier, exam.patient_name, exam.exam_description, exam.requesting_physician FROM atendimento_schema.service LEFT JOIN atendimento_schema.exam ON service.id = exam.service_id WHERE service.service_identifier = $1"
+
+	rows, erro := repository.DB.Query(query, serviceIdentifier)
+
+	if erro != nil {
+		log.Fatalf("Erro ao tentar executar a query de buscar de serviço.")
 	}
+
 	defer rows.Close()
 
 	for rows.Next() {
-		var service models.Service
+		var exam models.ExamDTO
+
 		if erro = rows.Scan(
-			&service.ServiceIdentifier,
-			&service.ServiceDate,
-			&service.Exams,
+			&exam.ServiceDate,
+			&exam.ServiceIdentifier,
+			&exam.PatientName,
+			&exam.ExamDescription,
+			&exam.RequestingPhysician,
 		); erro != nil {
-			log.Fatalf("Erro ao tentar scanear as linhas da query. Erro: %v", erro)
+			log.Fatalf("Erro ao tentar scanear as linhas do banco de dados. Erro: %v", erro)
 		}
-		services = append(services, service)
+		exams = append(exams, exam)
 	}
 
-	return
-}
-
-func NewRepository() (repository *Repository) {
 	return
 }
